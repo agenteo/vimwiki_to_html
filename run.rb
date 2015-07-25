@@ -6,6 +6,7 @@ def vimwiki_link_matcher(text=nil)
   /\[\[(#{text})\]\]/
 end
 
+template_file = ENV['TEMPLATE_FILE'] || 'template/markup.html'
 vimwiki_directory = ENV['VIMWIKI_DIRECTORY'] || 'vimwiki'
 vimwiki_valid_markdown_directory = ENV['VIMWIKI_MARKDOWN_DIRECTORY'] || '_vimwiki_valid_markdown'
 vimwiki_html_directory = ENV['VIMWIKI_HTML_DIRECTORY'] || '_vimwiki_html_directory'
@@ -26,9 +27,8 @@ Dir.glob("#{vimwiki_valid_markdown_directory}/*.md") do |markdown_file|
   text = File.read(markdown_file)
   vimwiki_links_to_convert = text.scan(vimwiki_link_matcher).flatten
   puts "#{vimwiki_links_to_convert.count} links to convert..."
-  puts vimwiki_links_to_convert.inspect
   vimwiki_links_to_convert.each do |link_name|
-    link_path = URI.escape(link_name)
+    link_path = URI.escape(link_name) + '.html'
     new_link = "[#{link_name}](/#{link_path})"
     text.gsub! vimwiki_link_matcher(link_name), new_link
   end
@@ -42,9 +42,12 @@ puts ">> Converting files from markdown to html"
 Dir.glob("#{vimwiki_valid_markdown_directory}/*.md") do |markdown_file|
   filename = File.basename(markdown_file, '.md') + '.html'
   system('mkdir', '-p', vimwiki_html_directory)
-  system("pandoc -f markdown -t html #{markdown_file} > #{vimwiki_html_directory}/#{filename}")
-  puts "!! Converted #{markdown_file} to #{filename}.html"
+  system("pandoc -f markdown -t html #{markdown_file} --template #{template_file} > #{vimwiki_html_directory}/#{filename}")
+  puts "!! Converted #{markdown_file} to #{filename}"
 end
 
-#system("rm -R #{vimwiki_valid_markdown_directory}")
+system("rm -R #{vimwiki_valid_markdown_directory}")
+
+system "cp template/robots.txt #{vimwiki_html_directory}"
+system "cp -R template/css #{vimwiki_html_directory}"
 puts "8-) all done!"
